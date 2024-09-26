@@ -330,7 +330,7 @@ How do we solve this?
 ### Implementation
 - All you need is a good random number generator, a data structure to track the processes (list), and the total number of tickets
 
-![impl](image.png)
+![impl](images/image.png)
 
 - Iterate through the process list until you find the range of tickets corresponding to the process that beats the winner
 ### Fairness
@@ -348,7 +348,7 @@ How do we solve this?
   - At any given time, pick the process to run that has the lowest pass value so far
   - When you run a process increment its pass counter by its stride
 
-![alt text](image-1.png)
+![alt text](images/image-1.png)
 
 - Basically, larger ticket values run more often because they have a smaller stride, so it works nicely
 - One problem is if a new job enters, what should its pass value be set to? 0? It just will then dominate the CPU potentially for a very long time
@@ -369,11 +369,11 @@ How do we solve this?
   - anywhere from -20 to +19 for a process, default 0
   - Positve vals imply lower priority and negative values imply higher priority
 
-![alt text](image-2.png)
+![alt text](images/image-2.png)
 
 - So for instance, A has a nice value of -5 and B has a nice value of 0. A will get a weight of 3121, B a value of 1024. The formula will yield a time slice of 3/4 for A and 1/4 for B, meaning A has longer vruntime. A new formula for calculating vruntime is introduced:
 
-![alt text](image-3.png)
+![alt text](images/image-3.png)
 
 - This results in A having 1/3 the vruntime accumulation of B
 - Running processes are stored in a red-black tree, ordered by a processes's vruntime
@@ -393,7 +393,7 @@ How do we solve this?
   - Temporal locality is that when a piece of data is accessed, it is likely to be accessed again in the near future
   - Spatial locality is that if a program access a data item at address _x_, it is likely to acess data items near _x_ as well
     - Streaming through an array
-![alt text](image-4.png)
+![alt text](images/image-4.png)
 - Caching with multiple CPUs with a single shared memory (as seen in the above image) is much harder than it seems
   - Imagine a program running on CPU 1 reads a data item (with value _D_) at address _A_
   - The system fetches it from main memory (as it is not yet on the cache) and gets the value _D_
@@ -445,8 +445,6 @@ How do we solve this?
 [Back to top](#table-of-contents)
 
 ## Chapter 13
-
-
 
 
 [Back to top](#table-of-contents)
