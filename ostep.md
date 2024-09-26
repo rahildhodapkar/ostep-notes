@@ -445,6 +445,53 @@ How do we solve this?
 [Back to top](#table-of-contents)
 
 ## Chapter 13
-
+### Early Systems
+- Early machines did not provide much of an abstraction to users
+![alt text](images/image-5.png)
+  - Physical memory of the machine used to look like the above image
+- All OS was was a set of routines that sat in memory, with one running program sitting in physical memory
+### Multiprogramming and Time Sharing
+- Because machines were expensive, people began to share machines more effectively -> leads to birth of multiprogramming
+  - Multiprogramming is where multiple processes run at a given time, with the OS switching between them
+  - This increased the effective utilization of the CPU
+    - Efficiency increase important considering machines used to cost hundreds of thousands, if not millions, of dollars
+- People demanded more from their machines, leading to time sharing
+  - Realized the limitations of batch computing
+- Interactivity became important, as many users might be concurrently using a machine, each waiting for a timeley response from their currently-executing taks
+- One implementation of time running:
+  - Run one process for a short while, giving it full access to all memory, then stop it, save state to some disk, load some other process's state, run that for a while, and thus have some crude sharing strategy
+- Above implementation is slow, better to have processes stay in memory while switching between them, allowing OS to implement time sharing efficiently
+![alt text](images/image-6.png)
+- Three processes (A,B,C) in above diagram, each having a small part of the memory
+  - The OS chooses to run one of the processes (A), while the others (B and C) sit in the ready queue waiting to run
+- As time sharing became more popular, new demands were expected
+  - Need protection, a process should be able to manipulate another process's memory
+### The Address Space
+- OS must have easy to use abstraction of physical memory for users-sake
+  - Abstraction is called the address space
+  - Is the running program's view of memory in the system
+- Address space of a process contains all the memory state of the running program and stores the following three (and more):
+  - The code of the program 
+  - A stack is used to keep track of where the program is in the function call chain, as well as to allocate local variables
+  - Heap is used for dynamically-allocated user-managed memory
+![alt text](images/image-7.png)
+- In the above image, we see the program code is at the top of the address space. This is because code is small in terms of memory size, and static
+- The heap (top) and stack (bottom) are placed in a way to let them grow if necessary
+  - They must grow in opposite directions and meet in the middle
+- This is just one way to set up address space, there are other ways
+  - Especially true when dealing with multiple threads
+- Remember: describing the address space is actually describing the abstraction the OS provides to the running program
+  - Program is not actually in memory at physical addres 0 through 16KB (from pic), rather it is loaded at some arbitrary physical address(es)
+- When the OS does this, we say the OS is **virtualizing memory**
+- A program thinking it starts at address 0 is called a **virtual address**
+### Goals
+- First goal: transparency
+  - Virtual memory (VM) should be invisible to the running program
+  - Program should behave as if it has its own private physical memory
+- Second goal: efficiency
+  - Virtualization must be as efficient as possible, in terms of time and space
+- Third and final goal: protection
+  - OS should protect processes from one another as well as the OS itself
+  - Protection enables the property of isolation among processes
 
 [Back to top](#table-of-contents)
