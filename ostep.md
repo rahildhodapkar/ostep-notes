@@ -9,6 +9,7 @@
 6. [Chapter 9 - Scheduling: Proportional Share](#chapter-9)
 7. [Chapter 10 - Multiprocessor Scheduling](#chapter-10)
 8. [Chapter 13 - The Abstraction: Address Spaces](#chapter-13)
+9. [Chapter 14 - Interlude: Memory API](#chapter-14)
 
 ## Chapter 4
 - A process is simply a running program
@@ -495,3 +496,102 @@ How do we solve this?
   - Protection enables the property of isolation among processes
 
 [Back to top](#table-of-contents)
+
+## Chapter 14
+Discussing the memory allocation interfaces in Unix systems.
+### Types of Memory
+- Two types of memory that are allocated
+  - First is stack memory, allocations and deallocations of it are managed implicitly by the compiler for you
+    - Sometimes referred to as **automatic** memory
+
+To declare memory on the stack:
+```C
+void func() {
+  int x; // declares an integer on the stack
+  ...
+}
+```
+
+  - Second type of memory is long-lived, called heap memory
+    - Allocations and deallocations are _explicitly_ handled by you
+
+To allocate an integer on the heap:
+```C
+void func() {
+  int *x = (int *) malloc(sizeof(int));
+  ...
+}
+```
+
+### The `malloc()` Call
+- `malloc()` call is simple:
+  - Pass it a size asking for some room on the heap
+  - Either succeeds and gives you back a pointer to the newly-allocated space, or fails and returns NULL
+- It is rare to call `malloc()` with a set size, you would rather do something like this:
+
+```C
+double *d = (double *) malloc(sizeof(double));
+```
+
+- Notice the use of `sizeof()` to get the proper memory size required
+  - This is an operator, not a function call, as it is executed at compile-time
+
+### The `free()` Call
+- To free heap memory that is no longer in use, programmers simply call `free()`:
+
+```C
+int *x = malloc(10 * sizeof(int));
+...
+free(x);
+```
+
+### Common Errors
+- Forgetting to Allocate Memory:
+  - Many routines expect memory to be allocated before you call them
+    - For instance, `strcpy(dst,src)` copies a string from a source ptr to a destination ptr, however if destination is not allocated, it will lead to a segmentation fault
+
+Improper `strcpy()` usage:
+```C
+char *src = "hello";
+char *dst; // oops! unallocated
+strcpy(dst, src); // segfault and die
+```
+
+Proper `strcpy()` usage:
+```C
+char *src = "hello";
+char *dst = (char *) malloc(strlen(src) + 1);
+strcpy(dst, src); // work properly
+```
+
+- Not Allocating Enough Memory:
+  - Sometimes referred to as a **buffer overflow**
+
+For instance:
+```C
+char *src = "hello";
+char *dst = (char *) malloc(strlen(src)); // too small!
+strcpy(dst, src); // work properly
+```
+This is wrong because usually when `strcopy()` executes, it writes one byte too far past the end of the allocated space
+
+- Forgetting to Initialize Allocated Memory
+  - This happens when you call `malloc()` properly but forget to fill in some values into the newly-allocated data type (RIP)
+  - If this happens, program will eventually encounter an **uninitialized read**
+    - Reads from the heap some data of unknown value
+- Forgetting to Free Memory:
+  - Known as a **memory leak**
+  - Slowly leaking memory eventually leads one to run out of memory
+- Freeing Memory Before You Are Done With It:
+  - Called a **dangling pointer**
+  - Subsequent use of said pointer can crash the program, or overwrite valid memory
+- Freeing Memory Repeatedly
+  - Known as a **double free**
+    - Outcome is undefined
+- Calling `free()` Incorrectly
+  - Bad things happen when you pass it something not received from `malloc()` (aka anything but a pointer returned from `malloc()`)
+### Underlying OS Support
+- These are not system calls, but rather library calls
+### Other Calls
+- `calloc()` allocates memory and also zeroes it before returning
+- `realloc()` makes a new larger region of memory, copies the old region into it, and then returns the pointer to the new region
