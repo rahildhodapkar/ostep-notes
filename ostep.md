@@ -10,6 +10,9 @@
 7. [Chapter 10 - Multiprocessor Scheduling](#chapter-10)
 8. [Chapter 13 - The Abstraction: Address Spaces](#chapter-13)
 9. [Chapter 14 - Interlude: Memory API](#chapter-14)
+10. [Chapter 26 - Concurrency and Threads](#chapter-15)
+11. [Chapter 27 - Thread API](#chapter-16)
+12. 
 
 ## Chapter 4
 - A process is simply a running program
@@ -595,3 +598,137 @@ This is wrong because usually when `strcopy()` executes, it writes one byte too 
 ### Other Calls
 - `calloc()` allocates memory and also zeroes it before returning
 - `realloc()` makes a new larger region of memory, copies the old region into it, and then returns the pointer to the new region
+
+[Back to top](#table-of-contents)
+## Chapter 26
+- A multi-threaded program has more than one point of execution 
+  - Each thread can be thought of as a separate process
+    - Except they share the same address space and can thus access the same data
+- A thread has a program counter, private set of registers, and
+  thus a context switch must take place to switch from thread one
+  to two
+- We use thread control blocks (TCBs) to store the state of each thread of a process
+- In a multi-threaded address space, instead of there being just one stack, there will be _x_ stacks present for _x_ threads  
+### Why Use Threads?
+- Parallelism
+  - Can make programs run faster when using modern hardware
+- You can also avoid blocking program progress due to slow I/O
+### An Example: Thread Creation
+- Say we want to run a program that creates two threads, each of which does some independent work (in this case printing "A" or "B")
+
+```C
+#include <stdio.h>
+#include <assert.h>
+#include <pthread.h>
+#include "common.h"
+#include "common_threads.h"
+
+void *mythread(void *arg) {
+  printf("%s\n", (char *) arg);
+  return NULL;
+}
+
+int main (int argc, char *argv[]) {
+  pthread_t p1, p2;
+  int rc;
+  printf("main: begin\n");
+  Pthread_create(&p1, NULL, mythread, "A");
+  Pthread_create(&p2, NULL, mythread, "B");
+  // join waits for the threads to finish
+  Pthread_join(p1, NULL);
+  Pthread_join(p2, NULL);
+  printf("main: end\n");
+  return 0;
+}
+```
+
+The main function joins the two threads to ensure they complete before continuing in the calling thread
+
+### Why It Gets Worse: Shared Data
+- Textbook goes over the thread for loop problem from HW1
+  - Basically if you don't use locks you may not get the desired number
+### The Heart of the Problem: Uncontrolled Scheduling
+- Threads may be behind each other leading to undesired outcomes
+- Race condition: results depend on the timing of the code's execution 
+  - Leads to indeterminate results
+- A section of code that can result in a race condition is called a critical section
+- We want mutual exclusion
+  - Property guarantees that if one thread is executing within the critical section, the others will be prevented from doing so
+### The Wish for Atomicity
+- An atomic instruction is something that cannot be interrupted, and performs the update as desired
+  - Also means "as a unit" or "all or none"
+### One More Problem: Waiting For Another
+- Need to figure out how to sleep and wake a thread
+
+[Back to top](#table-of-contents)
+
+## Chapter 27
+### Thread Creation
+- In POSIX, it is easy:
+
+```C
+#include <pthread.h>
+
+int
+pthread_create(pthread_t *thread, const pthread_attr_t *attr,
+    void *(*start_routine)(void*), void *arg);
+```
+
+- Four Arguments (`thread`, `attr`, `start_routine`, `arg`)
+  1. Pointer to a structure of type `pthread_t`
+  2. Used to specify any attributes this thread might have
+    - Setting the stack size or information about the scheduling priority of the thread
+    - Usually defaults are fine
+  3. Which function should this thread start running in?
+    - In C this is called a function pointer
+  4. The argument to be passed to the function where the thread begins execution
+### Thread Completion
+- To wait for a thread to complete, you must call the routine `pthread_join()`
+
+`int pthread_join(pthread_t thread, void **value_ptr);`
+
+
+```C
+#include <stdio.h>
+#include <pthread.h>
+
+typedef struct {
+  int a;
+  int b;
+} myarg_t;
+
+void *mythread(void *arg) {
+  myarg_t *args = (myarg_t *) arg;
+  printf("%d %d\n", args->a, args->b);
+  return NULL;
+}
+
+int main(int argc, char *argv[]) {
+  pthread_t p;
+  myarg_t args = { 10, 20 };
+
+  int rc = pthread_create(&p, NULL, mythread, &args);
+  ...
+}
+```
+
+- Takes two arguments
+  1. First is of type `pthread_t`, and is used to specify which thread to wait for
+  2. Second argument is a pointer to the return value you expect to get back
+    - void pointer as routine can return anything  
+
+[Back to top](#table-of-contents)
+
+### Locks
+- When you have a region of code that is a critical sections, and thus needs to be protected to ensure correct operation, locks are quite useful
+### Condition Variables
+- Condition variables are useful when some kind of signaling must take place between threads, if one thread is waiting for another to do something before it can continue
+- Two primary routines are used by programs wishing to interact in this way:
+
+`int pthread_cond_wait(pthread_cond_t *cond, pthread_mutex_t *mutex);`
+
+`int pthread_cond_signal (pthread_cond_t *cond);`
+
+- The first routine puts the calling thread to sleep and waits for some other thread to signal it
+### Compiling and Running
+- Need to use `-pthread` flag
